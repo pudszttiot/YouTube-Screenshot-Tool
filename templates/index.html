@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>YouTube Screenshot Tool | Capture Video Frames</title>
+    <!-- Modern font & subtle icons via Unicode, no external bloat -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(145deg, #f8fafc 0%, #eff3f8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #0f172a;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .navbar {
+            background: #0b1120;
+            backdrop-filter: blur(0px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .nav-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(135deg, #ffffff, #cbd5e6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            transition: opacity 0.2s;
+        }
+
+        .nav-brand:hover {
+            opacity: 0.85;
+        }
+
+        .nav-brand::before {
+            content: "📸";
+            font-size: 1.5rem;
+            background: none;
+            -webkit-background-clip: unset;
+            color: #facc15;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            padding: 0.4rem 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-links a:hover {
+            color: white;
+            border-bottom-color: #facc15;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .container {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+            flex: 1;
+        }
+
+        /* flash messages - modern toast-like style */
+        .flash {
+            background: #fff1f0;
+            border-left: 5px solid #e11d48;
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(2px);
+            transition: all 0.2s;
+        }
+
+        .flash p {
+            margin: 0;
+            font-weight: 500;
+            color: #9f1239;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .flash p::before {
+            content: "⚠️";
+            font-size: 1.1rem;
+        }
+
+        /* main card */
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.02);
+            padding: 2rem 2rem 2.2rem;
+            transition: transform 0.2s ease, box-shadow 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .card:hover {
+            box-shadow: 0 30px 55px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(125deg, #0f172a, #2d3a5e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        h1::before {
+            content: "🎬";
+            font-size: 2rem;
+            background: none;
+            -webkit-background-clip: unset;
+            color: #dc2626;
+        }
+
+        .subhead {
+            color: #475569;
+            margin-bottom: 1.8rem;
+            font-size: 1rem;
+            border-left: 3px solid #facc15;
+            padding-left: 1rem;
+            font-weight: 450;
+        }
+
+        /* form elements */
+        .form-group {
+            margin-top: 0.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-family: 'Inter', monospace;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.25rem;
+            background: #ffffff;
+            transition: all 0.25s ease;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            font-weight: 450;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+            transform: scale(1.01);
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+            font-family: 'Inter', monospace;
+        }
+
+        button {
+            background: linear-gradient(105deg, #1e293b, #0f172a);
+            color: white;
+            border: none;
+            padding: 1rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        button::before {
+            content: "📸";
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            background: linear-gradient(105deg, #0f172a, #020617);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 28px -10px rgba(0, 0, 0, 0.25);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            transition: 0.05s;
+        }
+
+        /* ----- LOADING SPINNER STYLES (button integrated) ----- */
+        .loader-spinner {
+            display: inline-block;
+            width: 1.2rem;
+            height: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.7s linear infinite;
+            margin-right: 0.6rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* loading state for button: hide original pseudo-element, disable interaction */
+        button.loading {
+            pointer-events: none;
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+
+        button.loading::before {
+            content: none !important;
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: #5b6e8c;
+            margin-top: 1.2rem;
+            text-align: center;
+            background: #f1f5f9;
+            padding: 0.6rem;
+            border-radius: 1.5rem;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .helper-text a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .helper-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Features mini section (purely design) */
+        .feature-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-top: 1.8rem;
+            justify-content: center;
+        }
+
+        .badge {
+            background: #eef2ff;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1e40af;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .badge:hover {
+            background: #e0e7ff;
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem 1.5rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.8rem;
+            color: #5b6e8c;
+            background: rgba(248, 250, 252, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .footer p {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Responsive touch */
+        @media (max-width: 640px) {
+            .nav-container {
+                padding: 0.8rem 1.2rem;
+                flex-direction: column;
+                text-align: center;
+            }
+            .nav-links {
+                gap: 1.2rem;
+            }
+            .container {
+                padding: 0 1rem;
+                margin: 1.2rem auto;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+            h1::before {
+                font-size: 1.6rem;
+            }
+            button {
+                padding: 0.85rem 1.2rem;
+            }
+            input {
+                padding: 0.85rem 1rem;
+            }
+            .loader-spinner {
+                width: 1rem;
+                height: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-brand {
+                font-size: 1.2rem;
+            }
+            .badge {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* subtle entrance animation */
+        .card {
+            animation: fadeUp 0.45s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-brand">YouTube Screenshot Tool</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- flash messages (same Jinja logic, enhanced style) -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- main content card: preserves all original functionality -->
+        <div class="card">
+            <h1>Capture Screenshots from Any YouTube Video</h1>
+            <div class="subhead">
+                High-quality frames • Time‑accurate • No watermark
+            </div>
+
+            <form method="post" id="screenshotForm">
+                <div class="form-group">
+                    <input type="text" 
+                           name="url" 
+                           placeholder="https://youtu.be/... or https://www.youtube.com/watch?v=..." 
+                           required 
+                           aria-label="YouTube video URL">
+                </div>
+                <button type="submit" id="submitBtn">Load Video & Screenshot</button>
+            </form>
+
+            <div class="helper-text">
+                💡 Supports <strong>youtu.be/*</strong> , <strong>youtube.com/watch?v=</strong> and playlists (first video). 
+                After loading, choose timestamps to capture.
+            </div>
+
+            <!-- decorative micro-features: only improves UI/UX -->
+            <div class="feature-badges">
+                <span class="badge">🎞️ Any duration</span>
+                <span class="badge">⚡ Instant preview</span>
+                <span class="badge">🖼️ High resolution</span>
+                <span class="badge">📥 Download ready</span>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>✨ YouTube Screenshot Tool — Capture frames legally for fair use, education, or personal projects. Respect content rights.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.7rem;">© 2025 • clean & modern interface</p>
+    </footer>
+
+    <!-- LOADING SPINNER SCRIPT: shows indicator on form submission -->
+    <script>
+        (function() {
+            const form = document.getElementById('screenshotForm');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!form || !submitBtn) return;
+
+            // Store original button content for potential future use (but we rely on reload)
+            // Add submit event listener with loading indicator
+            form.addEventListener('submit', function(event) {
+                // First, perform native HTML5 validation (required, etc)
+                // If form is invalid, let browser show validation messages and do NOT show spinner
+                if (!form.checkValidity()) {
+                    // Let the browser trigger native validation UI, no spinner
+                    return;
+                }
+
+                // Prevent default submission so we can show spinner + disable button
+                event.preventDefault();
+
+                // Guard: if button already has loading class, avoid double triggers (just in case)
+                if (submitBtn.classList.contains('loading')) {
+                    return;
+                }
+
+                // Apply loading styles & disable visually
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+
+                // Save original button content width to avoid layout shift? optional but smooth
+                const originalText = submitBtn.textContent;
+                
+                // Clear existing inner content (including any previous text nodes)
+                // We'll replace with spinner element + loading text
+                // Important: we need to hide the pseudo-element via CSS (already handled by .loading::before)
+                submitBtn.innerHTML = '';   // Remove all children and text
+
+                // Create spinner span
+                const spinnerSpan = document.createElement('span');
+                spinnerSpan.className = 'loader-spinner';
+                spinnerSpan.setAttribute('aria-hidden', 'true');
+                
+                // Create text node
+                const loadingText = document.createTextNode(' Loading video, please wait...');
+                
+                // Append spinner and text
+                submitBtn.appendChild(spinnerSpan);
+                submitBtn.appendChild(loadingText);
+                
+                // Optional: keep button width stable (no jitter)
+                // We can force a min-width from computed style, but it's fine due to flex/gap
+                
+                // Small delay to ensure DOM updates (spinner animation visible)
+                // Then manually submit the form programmatically.
+                // Using setTimeout with 10ms ensures the browser paints the loading state before navigating.
+                setTimeout(function() {
+                    // Submit the form (bypasses this event listener because we call .submit() directly)
+                    form.submit();
+                }, 12);
+            });
+        })();
+    </script>
+</body>
+</html>

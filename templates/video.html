@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }} - Screenshot Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        /* Navbar styles */
+        .navbar {
+            background: #1e2a3a;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            letter-spacing: -0.3px;
+        }
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 1.5rem;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+            font-weight: 500;
+        }
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+        /* Main content */
+        .container {
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+            color: #1e2a3a;
+            word-wrap: break-word;
+            border-left: 4px solid #007bff;
+            padding-left: 16px;
+        }
+        #player {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: #000;
+        }
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin: 1rem 0;
+        }
+        .button-group {
+            display: inline-flex;
+            gap: 10px;
+            margin: 0 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        button:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            background: #b0c4de;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .secondary-btn {
+            background: #6c757d;
+        }
+        .secondary-btn:hover:not(:disabled) {
+            background: #5a6268;
+        }
+        .accent-btn {
+            background: #28a745;
+        }
+        .accent-btn:hover:not(:disabled) {
+            background: #218838;
+        }
+        .seek-control {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 60px;
+        }
+        #timestamp {
+            width: 65%;
+            min-width: 220px;
+            height: 5px;
+            border-radius: 5px;
+            background: #ddd;
+        }
+        #timestamp:focus {
+            outline: none;
+        }
+        #current-time, #duration-display {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 30px;
+            min-width: 70px;
+            text-align: center;
+        }
+        #preview-container {
+            margin-top: 24px;
+            text-align: center;
+            background: #fefefe;
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid #e9ecef;
+        }
+        #preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 12px;
+            border: 1px solid #dee2e6;
+        }
+        #result {
+            margin-top: 24px;
+            text-align: center;
+        }
+        img.full-screenshot {
+            max-width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+        }
+        .status {
+            margin-top: 8px;
+            color: #2c3e50;
+            font-style: normal;
+            font-size: 0.85rem;
+            background: #f1f3f5;
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 40px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        select {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 40px;
+            border: 1px solid #ced4da;
+            background: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        .action-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+        .badge-control {
+            background: #eef2f7;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e466e;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        hr {
+            margin: 12px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .speed-selector {
+            background: #ffffff;
+            border: 1px solid #ced4da;
+        }
+        @media (max-width: 700px) {
+            .button-group { gap: 8px; }
+            button { padding: 6px 12px; font-size: 12px; }
+            .seek-control { gap: 8px; }
+            #timestamp { width: 55%; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">🎬 YouTube Screenshot Tool</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">🏠 Home</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <div id="player">
+            <div id="youtube-player"></div>
+        </div>
+
+        <div class="controls">
+            <!-- Primary control row: Play/Pause, basic skip -->
+            <div class="control-row">
+                <div class="button-group">
+                    <button id="play-pause-btn" class="accent-btn">▶ Play</button>
+                    <button id="skip-back-5s">⏪ -5s</button>
+                    <button id="skip-back-1s">◀ -1s</button>
+                    <button id="skip-forward-1s">+1s ▶</button>
+                    <button id="skip-forward-5s">+5s ⏩</button>
+                </div>
+            </div>
+
+            <!-- Frame precise and navigation -->
+            <div class="control-row">
+                <div class="button-group">
+                    <button id="skip-back-frame" class="secondary-btn">🎞️ Frame -</button>
+                    <button id="skip-forward-frame" class="secondary-btn">Frame + 🎞️</button>
+                    <button id="goto-start" class="secondary-btn">⏮ Start</button>
+                    <button id="goto-end" class="secondary-btn">End ⏭</button>
+                </div>
+            </div>
+
+            <!-- Seek slider + timestamps -->
+            <div class="seek-control">
+                <span id="current-time">0:00.00</span>
+                <input type="range" id="timestamp" min="0" max="{{ duration }}" step="0.01" value="0">
+                <span id="duration-display">{{ duration|int // 60 }}:{{ '%02d' % (duration|int % 60) }}</span>
+            </div>
+
+            <!-- Playback speed + extra utilities -->
+            <div class="control-row">
+                <div class="badge-control">⚡ Speed:</div>
+                <select id="playback-speed" class="speed-selector">
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1.0x (Normal)</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
+                </select>
+                <div class="badge-control" id="current-speed-badge" style="background:#e9ecef;">🔘 1.0x</div>
+            </div>
+
+            <!-- Screenshot format & actions -->
+            <div class="action-row">
+                <select id="format-select">
+                    <option value="jpg">📷 JPEG (smaller)</option>
+                    <option value="png">🖼️ PNG (lossless)</option>
+                </select>
+                <button id="preview-btn">🔍 Preview Frame</button>
+                <button id="capture-btn">📸 Capture Screenshot</button>
+            </div>
+        </div>
+
+        <div id="preview-container">
+            <div class="status">✨ Preview will appear here</div>
+            <img id="preview-img" style="display: none;">
+        </div>
+        <div id="result"></div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+        let duration = {{ duration }};
+        let videoId = getVideoId('{{ video_url }}');
+        let isPlaying = false;
+        const FRAME_STEP = 0.04; // approximate frame duration ( ~24-30fps friendly)
+        let currentPlaybackRate = 1.0;
+
+        function getVideoId(url) {
+            let match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            return match ? match[1] : null;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '360',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'controls': 1,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'fs': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            let actualDuration = player.getDuration();
+            if (actualDuration && actualDuration > 0) {
+                duration = actualDuration;
+                document.getElementById('timestamp').max = actualDuration;
+                updateDurationDisplay(actualDuration);
+            }
+            // set initial playback rate to 1 (default)
+            if (player.setPlaybackRate) {
+                player.setPlaybackRate(1);
+                currentPlaybackRate = 1;
+                updateSpeedBadge(1);
+                const speedSelect = document.getElementById('playback-speed');
+                if (speedSelect) speedSelect.value = "1";
+            }
+            setInterval(updateSlider, 100);
+            updatePlayPauseButton();
+        }
+
+        function onPlayerStateChange(event) {
+            isPlaying = (event.data === YT.PlayerState.PLAYING);
+            updatePlayPauseButton();
+            updateSlider();
+        }
+
+        function updateSlider() {
+            if (player && player.getCurrentTime) {
+                let current = player.getCurrentTime();
+                if (!isNaN(current)) {
+                    document.getElementById('timestamp').value = current;
+                    document.getElementById('current-time').innerText = formatTime(current);
+                }
+            }
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00.00";
+            let mins = Math.floor(seconds / 60);
+            let secs = Math.floor(seconds % 60);
+            let frac = Math.floor((seconds % 1) * 100);
+            return mins + ':' + (secs < 10 ? '0' : '') + secs + '.' + (frac < 10 ? '0' : '') + frac;
+        }
+
+        function updateDurationDisplay(seconds) {
+            let mins = Math.floor(seconds / 60);
+            let secs = Math.floor(seconds % 60);
+            document.getElementById('duration-display').innerText = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
+        function updatePlayPauseButton() {
+            let btn = document.getElementById('play-pause-btn');
+            btn.innerText = isPlaying ? '⏸ Pause' : '▶ Play';
+        }
+
+        function updateSpeedBadge(rate) {
+            const badge = document.getElementById('current-speed-badge');
+            if (badge) badge.innerText = `⚡ ${rate}x`;
+        }
+
+        // Helper seek function with slider + time sync
+        function seekToTime(time) {
+            if (!player || !player.seekTo) return;
+            let target = Math.min(Math.max(0, time), duration);
+            player.seekTo(target, true);
+            document.getElementById('timestamp').value = target;
+            document.getElementById('current-time').innerText = formatTime(target);
+        }
+
+        // ---- Event Listeners for new and existing controls ----
+        document.getElementById('timestamp').addEventListener('input', function() {
+            let time = parseFloat(this.value);
+            if (player && player.seekTo && !isNaN(time)) {
+                player.seekTo(time, true);
+                document.getElementById('current-time').innerText = formatTime(time);
+            }
+        });
+
+        // Play/Pause
+        document.getElementById('play-pause-btn').addEventListener('click', function() {
+            if (player) {
+                if (isPlaying) player.pauseVideo();
+                else player.playVideo();
+            }
+        });
+
+        // Skip 5 seconds (existing)
+        document.getElementById('skip-back-5s').addEventListener('click', function() {
+            if (player && player.getCurrentTime) {
+                let newTime = Math.max(0, player.getCurrentTime() - 5);
+                seekToTime(newTime);
+            }
+        });
+        document.getElementById('skip-forward-5s').addEventListener('click', function() {
+            if (player && player.getCurrentTime && player.getDuration) {
+                let newTime = Math.min(player.getDuration(), player.getCurrentTime() + 5);
+                seekToTime(newTime);
+            }
+        });
+
+        // 🆕 Skip 1 second (forward & back) — main requested enhancement
+        document.getElementById('skip-back-1s').addEventListener('click', function() {
+            if (player && player.getCurrentTime) {
+                let newTime = Math.max(0, player.getCurrentTime() - 1);
+                seekToTime(newTime);
+            }
+        });
+        document.getElementById('skip-forward-1s').addEventListener('click', function() {
+            if (player && player.getCurrentTime && player.getDuration) {
+                let newTime = Math.min(player.getDuration(), player.getCurrentTime() + 1);
+                seekToTime(newTime);
+            }
+        });
+
+        // Frame step (existing, fine-tuned)
+        document.getElementById('skip-back-frame').addEventListener('click', function() {
+            if (player && player.getCurrentTime) {
+                let newTime = Math.max(0, player.getCurrentTime() - FRAME_STEP);
+                seekToTime(newTime);
+            }
+        });
+        document.getElementById('skip-forward-frame').addEventListener('click', function() {
+            if (player && player.getCurrentTime && player.getDuration) {
+                let newTime = Math.min(player.getDuration(), player.getCurrentTime() + FRAME_STEP);
+                seekToTime(newTime);
+            }
+        });
+
+        // 🆕 Go to Start / Go to End
+        document.getElementById('goto-start').addEventListener('click', function() {
+            if (player) {
+                seekToTime(0);
+            }
+        });
+        document.getElementById('goto-end').addEventListener('click', function() {
+            if (player && player.getDuration) {
+                let endTime = player.getDuration();
+                seekToTime(endTime);
+                // optional: if video ends, show final frame
+            }
+        });
+
+        // 🆕 Playback speed control (enhancement)
+        const speedSelect = document.getElementById('playback-speed');
+        speedSelect.addEventListener('change', function(e) {
+            let rate = parseFloat(e.target.value);
+            if (player && player.setPlaybackRate) {
+                player.setPlaybackRate(rate);
+                currentPlaybackRate = rate;
+                updateSpeedBadge(rate);
+            }
+        });
+        // Sync speed badge when player changes rate externally (rare but nice)
+        if (player) {
+            try {
+                // attempt to fetch current rate on state change
+                setInterval(() => {
+                    if (player && player.getPlaybackRate && player.getPlaybackRate() !== currentPlaybackRate) {
+                        let actualRate = player.getPlaybackRate();
+                        currentPlaybackRate = actualRate;
+                        updateSpeedBadge(actualRate);
+                        if (speedSelect.value != actualRate.toString()) {
+                            speedSelect.value = actualRate.toString();
+                        }
+                    }
+                }, 500);
+            } catch(e) { /* silent */ }
+        }
+
+        // Preview frame (existing but using fresh timestamp)
+        document.getElementById('preview-btn').addEventListener('click', function() {
+            if (!player || !player.getCurrentTime) {
+                alert("Player not ready yet");
+                return;
+            }
+            let timestamp = player.getCurrentTime();
+            let previewImg = document.getElementById('preview-img');
+            let previewStatus = document.querySelector('#preview-container .status');
+            previewStatus.innerText = '⏳ Loading preview...';
+            previewImg.style.display = 'none';
+
+            fetch('/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'timestamp=' + timestamp
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Preview failed');
+                return response.blob();
+            })
+            .then(blob => {
+                let url = URL.createObjectURL(blob);
+                previewImg.src = url;
+                previewImg.style.display = 'block';
+                previewStatus.innerText = '✅ Preview ready. Click "Capture" for full resolution.';
+            })
+            .catch(error => {
+                console.error('Preview error:', error);
+                previewStatus.innerText = '❌ Preview failed. Ensure server is running.';
+            });
+        });
+
+        // Capture screenshot (enhanced with loading + clipboard)
+        const captureBtn = document.getElementById('capture-btn');
+        captureBtn.addEventListener('click', function() {
+            if (!player || !player.getCurrentTime) {
+                alert("Player not ready");
+                return;
+            }
+            let timestamp = player.getCurrentTime();
+            let format = document.getElementById('format-select').value;
+
+            captureBtn.disabled = true;
+            let originalText = captureBtn.innerHTML;
+            captureBtn.innerHTML = '<span class="spinner"></span> Capturing...';
+
+            fetch('/capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `timestamp=${timestamp}&format=${format}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || 'Capture failed'); });
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                let url = URL.createObjectURL(blob);
+                let resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = '';
+                let img = document.createElement('img');
+                img.src = url;
+                img.classList.add('full-screenshot');
+                resultDiv.appendChild(img);
+
+                let buttonContainer = document.createElement('div');
+                buttonContainer.style.marginTop = '16px';
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.gap = '12px';
+                buttonContainer.style.justifyContent = 'center';
+                buttonContainer.style.flexWrap = 'wrap';
+
+                let a = document.createElement('a');
+                a.href = url;
+                a.download = `screenshot_${new Date().toISOString().slice(0,19)}.${format}`;
+                a.textContent = '💾 Download Screenshot';
+                a.style.display = 'inline-block';
+                a.style.background = '#28a745';
+                a.style.color = 'white';
+                a.style.padding = '8px 20px';
+                a.style.borderRadius = '40px';
+                a.style.textDecoration = 'none';
+                a.style.fontWeight = '500';
+                a.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                buttonContainer.appendChild(a);
+
+                if (navigator.clipboard) {
+                    let copyBtn = document.createElement('button');
+                    copyBtn.textContent = '📋 Copy to Clipboard';
+                    copyBtn.style.background = '#6c757d';
+                    copyBtn.style.marginLeft = '0';
+                    copyBtn.onclick = async () => {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({
+                                    [blob.type]: blob
+                                })
+                            ]);
+                            alert('✅ Screenshot copied to clipboard!');
+                        } catch (err) {
+                            alert('❌ Could not copy: ' + err);
+                        }
+                    };
+                    buttonContainer.appendChild(copyBtn);
+                }
+                resultDiv.appendChild(buttonContainer);
+            })
+            .catch(error => {
+                console.error('Capture error:', error);
+                alert(error.message);
+            })
+            .finally(() => {
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = originalText;
+            });
+        });
+
+        // ensure that after seek the timestamp updates (interval covers it)
+        // Also extra utility: handle keyboard shortcuts? optional but fine.
+
+        // adjust player width responsiveness
+        window.addEventListener('resize', function() {
+            if (player && player.getIframe) {
+                let container = document.getElementById('youtube-player');
+                let width = Math.min(800, container.clientWidth);
+                player.setSize(width, 360);
+            }
+        });
+        // small fix for initial player dimensions
+        setTimeout(() => {
+            if (player && player.setSize) {
+                let containerWidth = document.querySelector('#youtube-player').clientWidth || 640;
+                player.setSize(Math.min(800, containerWidth), 360);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
