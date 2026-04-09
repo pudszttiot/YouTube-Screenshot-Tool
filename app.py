@@ -2,32 +2,55 @@ import os
 import json
 import subprocess
 import tempfile
-import time
+import base64
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this!
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this!
 
 def get_youtube_info(url):
-    """Get video title, duration, and the best video stream URL."""
+    """Get video title, duration, and the best video stream URL using cookies if available."""
+    cookies_env = os.environ.get('YOUTUBE_COOKIES')
+    cookies_path = None
+
     try:
-        cmd = ['yt-dlp', '--dump-json', '--skip-download', url]
+        if cookies_env:
+            # Decode the base64 cookies and write to a temporary file
+            cookies_data = base64.b64decode(cookies_env).decode('utf-8')
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+                f.write(cookies_data)
+                cookies_path = f.name
+
+        # Base command with optional cookies
+        base_cmd = ['yt-dlp', '--no-check-certificate']
+        if cookies_path:
+            base_cmd += ['--cookies', cookies_path]
+
+        # Get video info (title, duration)
+        cmd = base_cmd + ['--dump-json', '--skip-download', url]
         output = subprocess.check_output(cmd, stderr=subprocess.PIPE, text=True)
         info = json.loads(output)
         title = info.get('title', 'Unknown Title')
         duration = info.get('duration', 0)
 
-        # Get the highest quality video stream URL
-        format_cmd = ['yt-dlp', '-f', 'bestvideo', '--get-url', url]
+        # Get the best video stream URL
+        format_cmd = base_cmd + ['-f', 'bestvideo', '--get-url', url]
         video_url = subprocess.check_output(format_cmd, stderr=subprocess.PIPE, text=True).strip()
         if not video_url:
-            format_cmd = ['yt-dlp', '-f', 'best', '--get-url', url]
+            # Fallback to 'best' combined format
+            format_cmd = base_cmd + ['-f', 'best', '--get-url', url]
             video_url = subprocess.check_output(format_cmd, stderr=subprocess.PIPE, text=True).strip()
 
         return title, duration, video_url
+
     except subprocess.CalledProcessError as e:
         print(f"yt-dlp error: {e.stderr}")
         return None, None, None
+
+    finally:
+        # Clean up temporary cookies file
+        if cookies_path and os.path.exists(cookies_path):
+            os.unlink(cookies_path)
 
 def extract_frame(video_url, timestamp, output_format='jpg', scale=None, quality=None):
     """
@@ -146,4 +169,5 @@ def capture():
         return jsonify({'error': 'Failed to extract frame. Ensure ffmpeg is installed and the video URL is accessible.'}), 500
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
